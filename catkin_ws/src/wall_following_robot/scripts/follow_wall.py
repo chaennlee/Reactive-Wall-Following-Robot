@@ -44,21 +44,36 @@ def update_command_vel(linear_vel, angular_vel):
     msg.angular.z = angular_vel
     g_pub.publish(msg)
 
+def getDir(msg, dir, region_deg):
+    step = len(msg.ranges) // 16
+    di_ranges = {
+        'N':  msg.ranges[len(msg.ranges) - (region_deg // 2 - 1) : len(msg.ranges)-1] + msg.ranges[0:region_deg // 2],
+        'NNW':  msg.ranges[step - region_deg // 2 : step + region_deg // 2],
+        'NW':  msg.ranges[step*2 - region_deg // 2 : step*2 + region_deg // 2],
+        'WNW':  msg.ranges[step*3 - region_deg // 2 : step*3 + region_deg // 2],
+        'W':  msg.ranges[step*4 - region_deg // 2 : step*4 + region_deg // 2],
+        'E':  msg.ranges[step*12 - region_deg // 2 : step*12 + region_deg // 2],
+        'ENE':  msg.ranges[step*13 - region_deg // 2 : step*13 + region_deg // 2],
+        'NE':  msg.ranges[step*14 - region_deg // 2 : step*14 + region_deg // 2],
+        'NNE':  msg.ranges[step*15 - region_deg // 2 : step*15 + region_deg // 2],
+    }
+
+    return [i if i != 0.0 else math.inf for i in di_ranges[dir]]
 
 def scan_callback(msg):
     scan_max_value = msg.range_max
 
-    # Each region scans 9 degrees
+    region_deg = 7
     regions = {
-        'N':  min(min(msg.ranges[len(msg.ranges) - 4 : len(msg.ranges) - 1] + msg.ranges[0:5]), scan_max_value),
-        'NNW':  min(min(msg.ranges[11:20]), scan_max_value),
-        'NW':  min(min(msg.ranges[41:50]), scan_max_value),
-        'WNW':  min(min(msg.ranges[64:73]), scan_max_value),
-        'W':  min(min(msg.ranges[86:95]), scan_max_value),
-        'E':  min(min(msg.ranges[266:275]), scan_max_value),
-        'ENE':  min(min(msg.ranges[289:298]), scan_max_value),
-        'NE':  min(min(msg.ranges[311:320]), scan_max_value),
-        'NNE':  min(min(msg.ranges[341:350]), scan_max_value),
+        'N':  min(min(getDir(msg, 'N', region_deg)), scan_max_value),
+        'NNW':  min(min(getDir(msg, 'NNW', region_deg)), scan_max_value),
+        'NW':  min(min(getDir(msg, 'NW', region_deg)), scan_max_value),
+        'WNW':  min(min(getDir(msg, 'WNW', region_deg)), scan_max_value),
+        'W':  min(min(getDir(msg, 'W', region_deg)), scan_max_value),
+        'E':  min(min(getDir(msg, 'E', region_deg)), scan_max_value),
+        'ENE':  min(min(getDir(msg, 'ENE', region_deg)), scan_max_value),
+        'NE':  min(min(getDir(msg, 'NE', region_deg)), scan_max_value),
+        'NNE':  min(min(getDir(msg, 'NNE', region_deg)), scan_max_value),
     }
 
     global g_side, g_alpha, g_state, g_turn_start_time, g_wall_direction
